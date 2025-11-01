@@ -1,105 +1,162 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
+using System.IO;
 using miniproject02_huffmancoding.DataStructures;
 using miniproject02_huffmancoding.IO;
 using miniproject02_huffmancoding.Utils;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace HuffmanCompressor
 {
     class Program
     {
+        static FileManager fm = new FileManager();
+
         static void Main(string[] args)
         {
-            FileManager fm = new FileManager();
-            HuffmanTree tree = new HuffmanTree();
-            Compressor compressor = new Compressor();
-            Decompressor decompressor = new Decompressor();
-            FrequencyCounter counter = new FrequencyCounter();
-
             while (true)
             {
                 Console.Clear();
                 Console.WriteLine("=== COMPRESOR DE HUFFMAN ===");
-                Console.WriteLine("1. Cargar archivo de texto");
-                Console.WriteLine("2. Mostrar frecuencias");
-                Console.WriteLine("3. Generar árbol y códigos");
-                Console.WriteLine("4. Comprimir archivo");
-                Console.WriteLine("5. Descomprimir archivo");
-                Console.WriteLine("6. Salir");
+                Console.WriteLine("1. Cargar archivo .txt y comprimir");
+                Console.WriteLine("2. Escribir texto y comprimir");
+                Console.WriteLine("3. Descomprimir archivo");
+                Console.WriteLine("4. Salir");
                 Console.Write("\nSeleccione una opción: ");
-
                 string option = Console.ReadLine();
                 Console.Clear();
 
                 switch (option)
                 {
                     case "1":
-                        Console.Write("Ruta del archivo: ");
-                        string path = Console.ReadLine();
-
-                        // string input = fm.LoadTextFile(path);
-
-                        Console.WriteLine("\nArchivo cargado correctamente.\n");
-                        // Console.WriteLine(input);
-                        Console.ReadKey();
+                        CompressFromFile();
                         break;
-
                     case "2":
-                        Console.Write("Ingrese texto para analizar: ");
-
-                        string input = Console.ReadLine();
-                        Dictionary<char?, int> freqs = counter.CountFrequencies(input);
-
-                        Console.WriteLine("\nSímbolo\tFrecuencia");
-
-                        foreach (var f in freqs)
-                            Console.WriteLine($"{f.Key}\t{f.Value}");
-
-                        Console.ReadKey();
+                        CompressFromInput();
                         break;
-
                     case "3":
-                        Console.Write("Texto: ");
-                        string text = Console.ReadLine();
-
-                        Dictionary<char?, int> freqTable = counter.CountFrequencies(text);
-                        tree.BuildTree(freqTable);
-
-                        Console.WriteLine("\nCódigos Huffman generados:\n");
-                        foreach (var c in tree.Codes)
-                            Console.WriteLine($"{c.Key}: {c.Value}");
-                        Console.ReadKey();
+                        DecompressFile();
                         break;
-
                     case "4":
-                        Console.Write("Texto a comprimir: ");
-                        string textToCompress = Console.ReadLine();
-                        var freqs2 = counter.CountFrequencies(textToCompress);
-                        tree.BuildTree(freqs2);
-                        byte[] data = compressor.Compress(tree.Codes, textToCompress);
-                        fm.SaveBinaryFile("compressed", data);
-                        Console.WriteLine("\nArchivo comprimido como 'compressed.bin'");
-                        Console.ReadKey();
-                        break;
-
-                    case "5":
-                        Console.Write("Nombre del archivo comprimido (sin extensión): ");
-                        string compressedName = Console.ReadLine();
-
-                        byte[] compressedData = fm.LoadBinaryFile(compressedName);
-                        string decompressedText = decompressor.Decompress(compressedData);
-
-                        Console.WriteLine("\nArchivo descomprimido:\n");
-                        Console.WriteLine(decompressedText);
-                        Console.ReadKey();
-                        break;
-
-                    case "6":
+                        Console.WriteLine("Saliendo...");
                         return;
+                    default:
+                        Console.WriteLine("Opción inválida");
+                        Console.ReadKey();
+                        break;
                 }
             }
+        }
+
+        private static void CompressFromFile()
+        {
+            HuffmanTree tree = new HuffmanTree();
+            Compressor compressor = new Compressor();
+            FrequencyCounter counter = new FrequencyCounter();
+
+            Console.Write("Ruta del archivo .txt: ");
+            string path = Console.ReadLine();
+
+            if (!File.Exists(path))
+            {
+                Console.WriteLine("Archivo no encontrado.");
+                Console.ReadKey();
+                return;
+            }
+
+            string text = fm.LoadTextFile(path);
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                Console.WriteLine("El archivo está vacío.");
+                Console.ReadKey();
+                return;
+            }
+
+            Console.WriteLine("\n--- Tabla de frecuencias ---");
+            Dictionary<char?, int> freqs = counter.CountFrequencies(text);
+            foreach (var entry in freqs)
+                Console.WriteLine($"{entry.Key}\t{entry.Value}");
+
+            tree.BuildTree(freqs);
+
+            Console.WriteLine("\n--- Códigos Huffman ---");
+            foreach (var code in tree.Codes)
+                Console.WriteLine($"{code.Key}: {code.Value}");
+
+            Console.Write("\nNombre del archivo comprimido (sin extensión): ");
+            string binName = Console.ReadLine();
+
+            byte[] compressed = compressor.Compress(tree.Codes, text);
+            fm.SaveBinaryFile(binName, compressed);
+
+            Console.WriteLine($"\nArchivo comprimido guardado en 'Resources/Compressed/{binName}.bin'");
+            Console.ReadKey();
+        }
+
+        private static void CompressFromInput()
+        {
+            HuffmanTree tree = new HuffmanTree();
+            Compressor compressor = new Compressor();
+            FrequencyCounter counter = new FrequencyCounter();
+
+            Console.Write("Escriba el texto a comprimir: ");
+            string manualText = Console.ReadLine();
+
+            Dictionary<char?, int> manualFreqs = counter.CountFrequencies(manualText);
+            tree.BuildTree(manualFreqs);
+
+            Console.WriteLine("\n--- Tabla de frecuencias ---");
+            foreach (var f in manualFreqs)
+                Console.WriteLine($"{f.Key}\t{f.Value}");
+
+            Console.WriteLine("\n--- Códigos Huffman ---");
+            foreach (var code in tree.Codes)
+                Console.WriteLine($"{code.Key}: {code.Value}");
+
+            Console.Write("\nNombre del archivo comprimido (sin extensión): ");
+            string manualBin = Console.ReadLine();
+
+            byte[] manualCompressed = compressor.Compress(tree.Codes, manualText);
+            fm.SaveBinaryFile(manualBin, manualCompressed);
+
+            Console.WriteLine($"\nArchivo comprimido guardado en 'Resources/Compressed/{manualBin}.bin'");
+            Console.ReadKey();
+        }
+
+        private static void DecompressFile()
+        {
+            Decompressor decompressor = new Decompressor();
+
+            Console.WriteLine("=== DESCOMPRESIÓN ===");
+            string[] files = fm.GetCompressedFiles();
+
+            if (files.Length == 0)
+            {
+                Console.WriteLine("No hay archivos en 'Resources/Compressed'.");
+                Console.ReadKey();
+                return;
+            }
+
+            Console.WriteLine("Archivos disponibles:");
+            for (int i = 0; i < files.Length; i++)
+                Console.WriteLine($"{i + 1}. {Path.GetFileName(files[i])}");
+
+            Console.Write("\nEscriba el nombre del archivo: ");
+            string fileName = Console.ReadLine();
+
+            try
+            {
+                byte[] compressedData = fm.LoadBinaryFile(fileName);
+                string decompressedText = decompressor.Decompress(compressedData);
+
+                Console.WriteLine("\n--- TEXTO DESCOMPRIMIDO ---");
+                Console.WriteLine(decompressedText);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error al descomprimir: {e.Message}");
+            }
+
+            Console.ReadKey();
         }
     }
 }

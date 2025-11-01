@@ -57,7 +57,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\Compressed\" />
-    <Folder Include="Resources\FileTexts\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

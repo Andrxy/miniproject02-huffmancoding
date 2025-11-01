@@ -11,7 +11,6 @@ namespace miniproject02_huffmancoding.IO
     internal class FileManager
     {
         private readonly string CompressedPath = @"..\..\Resources\Compressed";
-        private readonly string FileTextsPth = @"..\..\Resources\FileTexts";
         public void SaveBinaryFile(string fileName, byte[] data)
         {
             try
@@ -43,6 +42,18 @@ namespace miniproject02_huffmancoding.IO
             {
                 throw new IOException("Error cargando archivo comprimido", e);
             }
+        }
+
+        public string LoadTextFile(string path)
+        {
+            if (!File.Exists(path))
+                throw new FileNotFoundException($"El archivo '{path}' no existe.");
+            return File.ReadAllText(path);
+        }
+
+        public string[] GetCompressedFiles()
+        {
+            return Directory.GetFiles(CompressedPath, "*.bin");
         }
     }
 }

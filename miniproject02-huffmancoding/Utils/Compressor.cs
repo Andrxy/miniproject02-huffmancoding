@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlTypes;
-using System.Linq;
 using System.Text;
 
 namespace miniproject02_huffmancoding.IO
@@ -13,48 +11,49 @@ namespace miniproject02_huffmancoding.IO
             // 1. Convertir la tabla de códigos a bytes
             byte[] tableBytes = CodeTableToBytes(codes);
 
-            // 3. Codificar el string de entrada a bits
+            // 2. Codificar el string de entrada a bits
             string bitString = EncodeInput(codes, input);
 
-            // 4. Asegurarse de que la longitud sea múltiplo de 8
+            // 3. Agregar padding para completar bytes
             string paddedBitString = PadBitString(bitString);
 
-            // 5. Convertir string de bits a arreglo de bytes
+            // 4. Convertir string de bits a bytes
             byte[] contentBytes = ConvertToBytes(paddedBitString);
 
-            // 6. Combinar bytes de la tabla + bytes del contenido
-            byte[] result = CombineTableAndContent(tableBytes, contentBytes);
+            // 5. Obtener tamaño del input
+            byte[] inputSize = BitConverter.GetBytes(input.Length);
 
-            return result;
+            // 6. Combinar tabla + tamaño + contenido
+            return CombineTableAndContent(tableBytes, inputSize, contentBytes);
         }
 
-            private byte[] CodeTableToBytes(Dictionary<char?, string> codes)
+        /// <summary>
+        /// Convierte la tabla de códigos a un arreglo de bytes
+        /// </summary>
+        private byte[] CodeTableToBytes(Dictionary<char?, string> codes)
+        {
+            List<byte> bytes = new List<byte>();
+            bytes.Add((byte) codes.Count);
+
+            foreach (var entry in codes)
             {
-                List<byte> bytes = new List<byte>();
-                int size = codes.Count;
-                bytes.Add((byte) size);
+                char? character = entry.Key;
+                string code = entry.Value;
 
-                foreach (char character in codes.Keys)
-                {
-                    string currentCode = codes[character];
-
-                    bytes.Add((byte) character); // Carácter
-                    bytes.Add((byte) currentCode.Length); // # de Bits
-                    byte[] bitsToBytes = ConvertToBytes(currentCode);
-                    bytes.AddRange(bitsToBytes);
-                }
-
-                return bytes.ToArray(); 
+                bytes.Add((byte) character);        // Carácter
+                bytes.Add((byte) code.Length);      // # de bits
+                bytes.AddRange(ConvertToBytes(code)); // Código en bytes
             }
 
-        // Convierte el string original a un string de '0' y '1' según códigos
+            return bytes.ToArray();
+        }
+
+        // Convierte el input a un string de '0' y '1' según los códigos de cada carácter
         private string EncodeInput(Dictionary<char?, string> codes, string input)
         {
             StringBuilder encoded = new StringBuilder();
-
-            foreach (char character in input)
-                encoded.Append(codes[character]);
-
+            foreach (char c in input)
+                encoded.Append(codes[c]);
             return encoded.ToString();
         }
 
@@ -63,47 +62,46 @@ namespace miniproject02_huffmancoding.IO
         {
             while (bitString.Length % 8 != 0)
                 bitString += '0';
-
             return bitString;
         }
-
-        // Convierte un string de bits a un arreglo de bytes
-        private byte[] ConvertToBytes(string paddedBitString)
+        //
+        //Convierte un string de bits a un arreglo de bytes
+        private byte[] ConvertToBytes(string bitString)
         {
             List<byte> bytes = new List<byte>();
+            bitString = PadBitString(bitString);
 
-            paddedBitString = PadBitString(paddedBitString);
-
-            for (int i = 0; i < paddedBitString.Length / 8; ++i)
+            for (int i = 0; i < bitString.Length; i += 8)
             {
-                string substring = paddedBitString.Substring(i * 8, 8);
-                bytes.Add((byte) ToInt(substring));
+                string substring = bitString.Substring(i, 8);
+                bytes.Add(ToByte(substring));
             }
 
             return bytes.ToArray();
         }
 
-        private byte[] CombineTableAndContent(byte[] tableBytes, byte[] contentBytes)
-        {
-            byte[] bytes = new byte[tableBytes.Length + contentBytes.Length];
-
-            tableBytes.CopyTo(bytes, 0);
-            contentBytes.CopyTo(bytes, tableBytes.Length);
-
-            return bytes;
-        }
-
-        private int ToInt(string substring, int result = 0, int index = 0)
+        /// Convierte 8 bits representados como string a un byte
+        private byte ToByte(string bits, byte result = 0, int index = 0)
         {
             if (index == 8) return result;
 
-            if (substring[index] == '1')
+            if (bits[index] == '1')
             {
                 int shift = 7 - index;
-                result = result | (1 << shift);
+                result = (byte) (result | (1 << shift));
             }
 
-            return ToInt(substring, result, index + 1);
+            return ToByte(bits, result, index + 1);
+        }
+
+        // Combina la tabla de códigos, tamaño del input y contenido codificado en un solo arreglo
+        private byte[] CombineTableAndContent(byte[] tableBytes, byte[] inputSize, byte[] contentBytes)
+        {
+            byte[] result = new byte[tableBytes.Length + inputSize.Length + contentBytes.Length];
+            tableBytes.CopyTo(result, 0);
+            inputSize.CopyTo(result, tableBytes.Length);
+            contentBytes.CopyTo(result, tableBytes.Length + inputSize.Length);
+            return result;
         }
     }
 }
