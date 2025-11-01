@@ -46,11 +46,13 @@
     <Compile Include="Entities\HuffmanTree.cs" />
     <Compile Include="Entities\HuffmanNode.cs" />
     <Compile Include="IO\FileManager.cs" />
+    <Compile Include="Utils\CompressionResult.cs" />
     <Compile Include="Utils\Compressor.cs" />
     <Compile Include="Utils\Decompressor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utils\FrequencyCounter.cs" />
+    <Compile Include="Utils\Stats.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

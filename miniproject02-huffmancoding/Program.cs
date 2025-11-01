@@ -71,24 +71,18 @@ namespace HuffmanCompressor
                 return;
             }
 
-            Console.WriteLine("\n--- Tabla de frecuencias ---");
-            Dictionary<char?, int> freqs = counter.CountFrequencies(text);
-            foreach (var entry in freqs)
-                Console.WriteLine($"{entry.Key}\t{entry.Value}");
-
-            tree.BuildTree(freqs);
-
-            Console.WriteLine("\n--- Códigos Huffman ---");
-            foreach (var code in tree.Codes)
-                Console.WriteLine($"{code.Key}: {code.Value}");
+            ShowFrequencies(text, counter);
+            tree.BuildTree(counter.CountFrequencies(text));
+            ShowCodes(tree);
 
             Console.Write("\nNombre del archivo comprimido (sin extensión): ");
             string binName = Console.ReadLine();
 
-            byte[] compressed = compressor.Compress(tree.Codes, text);
-            fm.SaveBinaryFile(binName, compressed);
+            CompressionResult result = compressor.Compress(tree.Codes, text);
+            fm.SaveBinaryFile(binName, result.Data);
 
             Console.WriteLine($"\nArchivo comprimido guardado en 'Resources/Compressed/{binName}.bin'");
+            Console.WriteLine(result.Stats); // Muestra estadísticas legibles
             Console.ReadKey();
         }
 
@@ -101,24 +95,18 @@ namespace HuffmanCompressor
             Console.Write("Escriba el texto a comprimir: ");
             string manualText = Console.ReadLine();
 
-            Dictionary<char?, int> manualFreqs = counter.CountFrequencies(manualText);
-            tree.BuildTree(manualFreqs);
-
-            Console.WriteLine("\n--- Tabla de frecuencias ---");
-            foreach (var f in manualFreqs)
-                Console.WriteLine($"{f.Key}\t{f.Value}");
-
-            Console.WriteLine("\n--- Códigos Huffman ---");
-            foreach (var code in tree.Codes)
-                Console.WriteLine($"{code.Key}: {code.Value}");
+            ShowFrequencies(manualText, counter);
+            tree.BuildTree(counter.CountFrequencies(manualText));
+            ShowCodes(tree);
 
             Console.Write("\nNombre del archivo comprimido (sin extensión): ");
             string manualBin = Console.ReadLine();
 
-            byte[] manualCompressed = compressor.Compress(tree.Codes, manualText);
-            fm.SaveBinaryFile(manualBin, manualCompressed);
+            CompressionResult result = compressor.Compress(tree.Codes, manualText);
+            fm.SaveBinaryFile(manualBin, result.Data);
 
             Console.WriteLine($"\nArchivo comprimido guardado en 'Resources/Compressed/{manualBin}.bin'");
+            Console.WriteLine(result.Stats);
             Console.ReadKey();
         }
 
@@ -157,6 +145,22 @@ namespace HuffmanCompressor
             }
 
             Console.ReadKey();
+        }
+
+        // Funciones auxiliares
+        private static void ShowFrequencies(string text, FrequencyCounter counter)
+        {
+            Console.WriteLine("\n--- Tabla de frecuencias ---");
+            var freqs = counter.CountFrequencies(text);
+            foreach (var entry in freqs)
+                Console.WriteLine($"{entry.Key}\t{entry.Value}");
+        }
+
+        private static void ShowCodes(HuffmanTree tree)
+        {
+            Console.WriteLine("\n--- Códigos Huffman ---");
+            foreach (var code in tree.Codes)
+                Console.WriteLine($"{code.Key}: {code.Value}");
         }
     }
 }

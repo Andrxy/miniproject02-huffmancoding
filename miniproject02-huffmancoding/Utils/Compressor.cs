@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace miniproject02_huffmancoding.IO
+namespace miniproject02_huffmancoding.Utils
 {
     internal class Compressor
     {
-        public byte[] Compress(Dictionary<char?, string> codes, string input)
+        public CompressionResult Compress(Dictionary<char?, string> codes, string input)
         {
             // 1. Convertir la tabla de códigos a bytes
             byte[] tableBytes = CodeTableToBytes(codes);
@@ -24,12 +24,26 @@ namespace miniproject02_huffmancoding.IO
             byte[] inputSize = BitConverter.GetBytes(input.Length);
 
             // 6. Combinar tabla + tamaño + contenido
-            return CombineTableAndContent(tableBytes, inputSize, contentBytes);
+            byte[] compressedData = CombineTableAndContent(tableBytes, inputSize, contentBytes);
+
+
+            int originalSize = Encoding.ASCII.GetByteCount(input);
+            int compressedSize = compressedData.Length;
+
+            Stats stats = new Stats();
+            stats.OriginalSize = originalSize;
+            stats.CompressedSize = compressedSize;
+            stats.CompressionRatio = originalSize /  (double)compressedSize;
+            stats.ReductionPercentage = 100 * (originalSize - compressedSize) / originalSize;
+
+            CompressionResult result = new CompressionResult();
+            result.Data = compressedData;
+            result.Stats = stats;
+
+            return result;
         }
 
-        /// <summary>
-        /// Convierte la tabla de códigos a un arreglo de bytes
-        /// </summary>
+        // Convierte la tabla de códigos a un arreglo de bytes
         private byte[] CodeTableToBytes(Dictionary<char?, string> codes)
         {
             List<byte> bytes = new List<byte>();
@@ -64,7 +78,7 @@ namespace miniproject02_huffmancoding.IO
                 bitString += '0';
             return bitString;
         }
-        //
+      
         //Convierte un string de bits a un arreglo de bytes
         private byte[] ConvertToBytes(string bitString)
         {
@@ -80,7 +94,7 @@ namespace miniproject02_huffmancoding.IO
             return bytes.ToArray();
         }
 
-        /// Convierte 8 bits representados como string a un byte
+        // Convierte 8 bits representados como string a un byte
         private byte ToByte(string bits, byte result = 0, int index = 0)
         {
             if (index == 8) return result;
