@@ -34,7 +34,7 @@ namespace miniproject02_huffmancoding.Utils
             stats.OriginalSize = originalSize;
             stats.CompressedSize = compressedSize;
             stats.CompressionRatio = originalSize /  (double)compressedSize;
-            stats.ReductionPercentage = 100 * (originalSize - compressedSize) / originalSize;
+            stats.ReductionPercentage = 100.0 * (originalSize - compressedSize) / originalSize;
 
             CompressionResult result = new CompressionResult();
             result.Data = compressedData;
